@@ -22,7 +22,36 @@ gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
 
 ## Usage
 
-TODO: Write usage instructions here
+Tescon ships a `tescon` CLI that converts RSpec-style specs toward minitest-spec.
+
+By default it prints the converted source to stdout and leaves the input file untouched:
+
+```bash
+tescon spec/models/user_spec.rb
+```
+
+A summary of changed files and per-rule application counts is written to stderr:
+
+```
+Changed 1 file
+  example_dsl     7
+  expect_eq       4
+  rspec_describe  1
+  subject         3
+```
+
+Pass `--write` (or `-w`) to overwrite the input file in place:
+
+```bash
+tescon --write spec/models/user_spec.rb
+```
+
+Multiple paths are supported. Files that do not exist are reported on stderr and processing continues with the remaining paths; the exit code is non-zero if any file failed.
+
+```bash
+tescon --help     # show options
+tescon --version  # show version
+```
 
 ## Development
 

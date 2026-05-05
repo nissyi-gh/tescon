@@ -1,3 +1,10 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Allow running directly from a checkout without `bundle exec` / `gem install`.
+dev_lib = File.expand_path("../lib", __dir__)
+$LOAD_PATH.unshift(dev_lib) if File.exist?(File.join(dev_lib, "tescon.rb"))
 
 require "tescon"
+
+exit Tescon::CLI.new(ARGV).run
