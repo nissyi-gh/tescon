@@ -17,6 +17,7 @@ module Tescon
       @stdout = stdout
       @stderr = stderr
       @write = false
+      @output_path = nil
       @fixtures_hints = false
     end
 
@@ -43,6 +44,7 @@ module Tescon
         opts.banner = BANNER
 
         opts.on("-w", "--write", "Overwrite input files in place") { @write = true }
+        opts.on("-o", "--output PATH", "Write output to PATH") { |path| @output_path = path }
         opts.on("--fixtures-hints", "Print FactoryBot fixture YAML hints") { @fixtures_hints = true }
 
         opts.on("-h", "--help", "Show this message") do
@@ -56,7 +58,10 @@ module Tescon
         end
       end
 
-      parser.parse(@argv)
+      paths = parser.parse(@argv)
+      raise OptionParser::InvalidOption, "cannot use --write with --output" if @write && @output_path
+
+      paths
     end
 
     def process(paths)
@@ -65,6 +70,7 @@ module Tescon
       changed_files = 0
       findings_by_rule = Hash.new(0)
       had_error = false
+      output = +""
 
       paths.each do |path|
         result = convert_file(path)
@@ -82,10 +88,10 @@ module Tescon
           File.write(path, converted) if @write
         end
 
-        @stdout.print(converted) unless @write
+        output << converted unless @write
       end
 
-      @stdout.flush if @stdout.respond_to?(:flush)
+      write_output(output) unless @write
       print_summary(changed_files, findings_by_rule)
       had_error ? 1 : 0
     end
@@ -105,10 +111,18 @@ module Tescon
       end
 
       output = FixturesHint.format(results)
-      @stdout.print(output)
-      @stdout.flush if @stdout.respond_to?(:flush)
+      write_output(output)
       @stderr.puts("No fixture hints.") if output.empty?
       had_error ? 1 : 0
+    end
+
+    def write_output(output)
+      if @output_path
+        File.write(@output_path, output)
+      else
+        @stdout.print(output)
+        @stdout.flush if @stdout.respond_to?(:flush)
+      end
     end
 
     def convert_file(path)

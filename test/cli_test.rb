@@ -22,6 +22,16 @@ describe Tescon::CLI do
     file&.unlink
   end
 
+  def with_output_path
+    file = Tempfile.new(["tescon-output", ".rb"])
+    path = file.path
+    file.close
+    file.unlink
+    yield path
+  ensure
+    File.unlink(path) if path && File.exist?(path)
+  end
+
   it "prints usage and exits 1 when no paths are given" do
     exit_code, stdout, stderr = run_cli([])
 
@@ -66,6 +76,33 @@ describe Tescon::CLI do
       expect(stderr).must_match(/Changed 1 file/)
       expect(File.read(path)).must_match(/^describe User do/)
     end
+  end
+
+  it "writes converted source to output path with -o" do
+    source = <<~RUBY
+      RSpec.describe User do
+      end
+    RUBY
+
+    with_spec_file(source) do |path|
+      with_output_path do |output_path|
+        exit_code, stdout, stderr = run_cli(["-o", output_path, path])
+
+        expect(exit_code).must_equal 0
+        expect(stdout).must_equal ""
+        expect(stderr).must_match(/Changed 1 file/)
+        expect(File.read(output_path)).must_match(/^describe User do/)
+        expect(File.read(path)).must_equal source
+      end
+    end
+  end
+
+  it "rejects using --write and --output together" do
+    exit_code, stdout, stderr = run_cli(["--write", "--output", "out.rb", "sample_spec.rb"])
+
+    expect(exit_code).must_equal 1
+    expect(stdout).must_equal ""
+    expect(stderr).must_match(/cannot use --write with --output/)
   end
 
   it "reports no changes when source already matches target" do
@@ -128,6 +165,7 @@ describe Tescon::CLI do
     expect(exit_code).must_equal 0
     expect(stdout).must_match(/Usage: tescon/)
     expect(stdout).must_match(/--write/)
+    expect(stdout).must_match(/--output/)
     expect(stdout).must_match(/--fixtures-hints/)
     expect(stderr).must_equal ""
   end
