@@ -83,6 +83,30 @@ describe Tescon::CLI do
     end
   end
 
+  it "prints FactoryBot fixture YAML hints" do
+    source = <<~RUBY
+      RSpec.describe User do
+        context "with a name" do
+          it "is valid" do
+            create(:user, name: "Alice")
+          end
+        end
+      end
+    RUBY
+
+    with_spec_file(source) do |path|
+      exit_code, stdout, stderr = run_cli(["--fixtures-hints", path])
+      basename = File.basename(path, ".rb")
+
+      expect(exit_code).must_equal 0
+      expect(stdout).must_match(/# #{basename}\.yml/)
+      expect(stdout).must_match(/with_a_name_is_valid_user:/)
+      expect(stdout).must_match(/name: "Alice"/)
+      expect(stderr).must_equal ""
+      expect(File.read(path)).must_equal source
+    end
+  end
+
   it "reports missing files and continues processing remaining paths" do
     source = <<~RUBY
       RSpec.describe User do
@@ -104,6 +128,7 @@ describe Tescon::CLI do
     expect(exit_code).must_equal 0
     expect(stdout).must_match(/Usage: tescon/)
     expect(stdout).must_match(/--write/)
+    expect(stdout).must_match(/--fixtures-hints/)
     expect(stderr).must_equal ""
   end
 

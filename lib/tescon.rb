@@ -3,6 +3,7 @@
 require_relative "tescon/analyzer"
 require_relative "tescon/cli"
 require_relative "tescon/converter"
+require_relative "tescon/fixtures_hint"
 require_relative "tescon/rewriter"
 require_relative "tescon/version"
 

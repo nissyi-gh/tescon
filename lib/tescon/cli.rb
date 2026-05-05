@@ -3,6 +3,7 @@
 require "optparse"
 
 require_relative "analyzer"
+require_relative "fixtures_hint"
 require_relative "rewriter"
 require_relative "version"
 
@@ -16,6 +17,7 @@ module Tescon
       @stdout = stdout
       @stderr = stderr
       @write = false
+      @fixtures_hints = false
     end
 
     def run
@@ -41,6 +43,7 @@ module Tescon
         opts.banner = BANNER
 
         opts.on("-w", "--write", "Overwrite input files in place") { @write = true }
+        opts.on("--fixtures-hints", "Print FactoryBot fixture YAML hints") { @fixtures_hints = true }
 
         opts.on("-h", "--help", "Show this message") do
           @stdout.puts opts.help
@@ -57,6 +60,8 @@ module Tescon
     end
 
     def process(paths)
+      return process_fixture_hints(paths) if @fixtures_hints
+
       changed_files = 0
       findings_by_rule = Hash.new(0)
       had_error = false
@@ -85,11 +90,38 @@ module Tescon
       had_error ? 1 : 0
     end
 
+    def process_fixture_hints(paths)
+      results = []
+      had_error = false
+
+      paths.each do |path|
+        result = analyze_file(path)
+        unless result
+          had_error = true
+          next
+        end
+
+        results << result
+      end
+
+      output = FixturesHint.format(results)
+      @stdout.print(output)
+      @stdout.flush if @stdout.respond_to?(:flush)
+      @stderr.puts("No fixture hints.") if output.empty?
+      had_error ? 1 : 0
+    end
+
     def convert_file(path)
+      analysis_result = analyze_file(path)
+      return unless analysis_result
+
+      rewrite_result = Rewriter.new.rewrite(analysis_result)
+      [analysis_result.source_file.source, rewrite_result.converted_source, rewrite_result.changes]
+    end
+
+    def analyze_file(path)
       source = File.read(path)
-      source_file = SourceFile.new(path: path, source: source)
-      rewrite_result = Rewriter.new.rewrite(Analyzer.new.analyze(source_file))
-      [source, rewrite_result.converted_source, rewrite_result.changes]
+      Analyzer.new.analyze(SourceFile.new(path: path, source: source))
     rescue Errno::ENOENT
       @stderr.puts "tescon: #{path}: file not found"
       nil
