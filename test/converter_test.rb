@@ -12,6 +12,8 @@ describe Tescon::Converter do
           specify "has a name" do
             expect(user.name).to eq("Alice")
           end
+
+          it { is_expected.to eq(User.new(name: "Alice")) }
         end
       end
     RUBY
@@ -24,6 +26,8 @@ describe Tescon::Converter do
           it "has a name" do
             expect(user.name).must_equal "Alice"
           end
+
+          it { user.must_equal User.new(name: "Alice") }
         end
       end
     RUBY

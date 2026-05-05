@@ -2,6 +2,7 @@
 
 require_relative "rules/example_dsl"
 require_relative "rules/expect_eq"
+require_relative "rules/is_expected_eq"
 require_relative "rules/rspec_describe"
 require_relative "rules/subject"
 
@@ -16,7 +17,8 @@ module Tescon
       Rules::RspecDescribe.new,
       Rules::ExampleDsl.new,
       Rules::Subject.new,
-      Rules::ExpectEq.new
+      Rules::ExpectEq.new,
+      Rules::IsExpectedEq.new
     ].freeze
 
     def initialize(rules: DEFAULT_RULES)
