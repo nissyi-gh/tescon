@@ -8,7 +8,8 @@ module Tescon
     def rewrite(analysis_result)
       findings = analysis_result.findings.sort_by(&:start_offset)
       converted_source = findings.reverse_each.each_with_object(analysis_result.source_file.source.dup) do |finding, source|
-        source[finding.start_offset...finding.end_offset] = finding.replacement
+        # Prism uses byte offsets; String#[range]= indexes by character in UTF-8 strings.
+        source.bytesplice(finding.start_offset, finding.end_offset - finding.start_offset, finding.replacement)
       end
 
       RewriteResult.new(
