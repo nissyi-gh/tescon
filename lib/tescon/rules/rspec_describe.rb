@@ -2,6 +2,7 @@
 
 require_relative "base"
 require_relative "call_visitor"
+require_relative "describe_helpers"
 
 module Tescon
   module Rules
@@ -27,7 +28,12 @@ module Tescon
           node.name == :describe &&
             node.receiver.is_a?(Prism::ConstantReadNode) &&
             node.receiver.name == :RSpec &&
-            node.message_loc
+            node.message_loc &&
+            !model_describe_target?(node)
+        end
+
+        def model_describe_target?(node)
+          DescribeHelpers.model_type?(node) && DescribeHelpers.constant_subject?(node)
         end
       end
     end

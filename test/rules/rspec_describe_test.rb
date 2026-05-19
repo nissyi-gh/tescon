@@ -15,16 +15,25 @@ describe Tescon::Rules::RspecDescribe do
 
   it "converts RSpec.describe to minitest describe" do
     source = <<~RUBY
-      RSpec.describe User, type: :model do
+      RSpec.describe User do
       end
     RUBY
 
     expected = <<~RUBY
-      describe User, type: :model do
+      describe User do
       end
     RUBY
 
     expect(convert(source)).must_equal expected
+  end
+
+  it "leaves RSpec.describe with type: :model to model_describe" do
+    source = <<~RUBY
+      RSpec.describe User, type: :model do
+      end
+    RUBY
+
+    expect(convert(source)).must_equal source
   end
 
   it "does not convert RSpec.describe inside strings" do

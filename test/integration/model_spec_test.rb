@@ -42,7 +42,9 @@ describe "typical model spec" do
     expected = <<~RUBY
       require "rails_helper"
 
-      describe User, type: :model do
+      class UserTest < ActiveSupport::TestCase
+        extend Minitest::Spec::DSL
+
         describe "associations" do
           it { is_expected.to belong_to(:organization) }
         end

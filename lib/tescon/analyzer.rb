@@ -14,6 +14,7 @@ require_relative "rules/expect_raise_error"
 require_relative "rules/factory_bot"
 require_relative "rules/is_expected_eq"
 require_relative "rules/let_bang"
+require_relative "rules/model_describe"
 require_relative "rules/rspec_describe"
 require_relative "rules/subject"
 
@@ -35,6 +36,7 @@ module Tescon
   # Runs conversion rules and returns findings without modifying source.
   class Analyzer
     DEFAULT_RULES = [
+      Rules::ModelDescribe.new,
       Rules::RspecDescribe.new,
       Rules::BeforeEach.new,
       Rules::ExampleDsl.new,
