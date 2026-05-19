@@ -1,36 +1,40 @@
 # Tescon
 
-TODO: Delete this and the text below, and describe your gem
+RSpec と FactoryBot から、Rails の **minitest-spec** と **fixtures** への移行を支援する CLI ツールです。
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/tescon`. To experiment with that code, run `bin/console` for an interactive prompt.
+変換は **レビュー前提の下書き** です。すべての spec を完全自動で置き換えることは目指していません。対応パターンだけを安全に書き換え、未対応部分はそのまま残します。
 
-## Installation
+## インストール
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
+Gemfile に追加:
 
 ```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add tescon
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+または:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+gem install tescon
 ```
 
-## Usage
+開発版:
 
-Tescon ships a `tescon` CLI that converts RSpec-style specs toward minitest-spec.
+```bash
+gem "tescon", github: "nissyi-gh/tescon"
+```
 
-By default it prints the converted source to stdout and leaves the input file untouched:
+## 使い方
+
+### spec の変換（デフォルト: dry-run）
+
+変換結果は **標準出力** に出し、入力ファイルは変更しません。
 
 ```bash
 tescon spec/models/user_spec.rb
 ```
 
-A summary of changed files and per-rule application counts is written to stderr:
+変更ファイル数とルールごとの適用回数は **標準エラー出力** に表示されます。
 
 ```
 Changed 1 file
@@ -40,33 +44,93 @@ Changed 1 file
   subject         3
 ```
 
-Pass `--write` (or `-w`) to overwrite the input file in place:
+上書きする場合:
 
 ```bash
 tescon --write spec/models/user_spec.rb
 ```
 
-Multiple paths are supported. Files that do not exist are reported on stderr and processing continues with the remaining paths; the exit code is non-zero if any file failed.
+別ファイルに書き出す場合:
 
 ```bash
-tescon --help     # show options
-tescon --version  # show version
+tescon -o test/models/user_spec.rb spec/models/user_spec.rb
 ```
 
-## Development
+複数ファイル:
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```bash
+tescon spec/models/user_spec.rb spec/models/post_spec.rb
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+### FactoryBot の fixture ヒント
+
+`create` / `build` などの呼び出しを解析し、fixtures 用の YAML 案を出力します（ソースは変更しません）。
+
+```bash
+tescon --fixtures-hints spec/models/user_spec.rb
+```
+
+リテラルで書かれた属性は YAML に展開し、動的な値は `# TODO` コメントとして残します。
+
+### オプション
+
+| オプション | 説明 |
+|-----------|------|
+| `-w`, `--write` | 入力ファイルを上書き |
+| `-o`, `--output PATH` | 出力先ファイル（`--write` と併用不可） |
+| `--fixtures-hints` | fixture YAML ヒントを出力（変換は行わない） |
+| `-h`, `--help` | ヘルプ |
+| `-v`, `--version` | バージョン |
+
+## 対応している変換（0.1.0）
+
+| ルール | RSpec | minitest-spec |
+|--------|-------|---------------|
+| `rspec_describe` | `RSpec.describe` | `describe` |
+| `example_dsl` | `context` / `specify` | `describe` / `it` |
+| `subject` | `subject` / `subject(:name)` | `let(:subject)` / `let` |
+| `expect_eq` | `expect(x).to eq(y)` | `expect(x).must_equal y` |
+| `expect_eq` | `expect(x).not_to eq(y)` | `expect(x).wont_equal y` |
+| `is_expected_eq` | `is_expected.to eq(y)` | `subject.must_equal y`（名前付き subject に対応） |
+| `expect_be_nil` | `expect(x).to be_nil` | `expect(x).must_be_nil` |
+| `expect_be_nil` | `expect(x).not_to be_nil` | `expect(x).wont_be_nil` |
+
+## 意図的に変換しないもの
+
+- 文字列リテラル内の RSpec 風テキスト
+- `type: :model` などの RSpec メタデータ
+- `shared_examples` / `shared_context`
+- `receive` / `have_received` などのモック
+- `let` / `before` / `after`（今後のバージョンで追加予定）
+- 上記以外のマッチャー（`be_truthy`, `include`, `raise_error` など）
+
+## 移行後のテスト構成
+
+**デフォルトのゴール** はトップレベルの minitest-spec です。
+
+```ruby
+describe User do
+  let(:user) { users(:alice) }
+
+  it "has a name" do
+    expect(user.name).must_equal "Alice"
+  end
+end
+```
+
+fixtures や `ActiveSupport::TestCase` のヘルパーが必要な場合は、クラス内で `extend Minitest::Spec::DSL` する構成も想定しています（`--style=hybrid` は今後対応予定）。
+
+## 開発
+
+```bash
+bin/setup
+bundle exec rake test
+```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/tescon. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/tescon/blob/main/CODE_OF_CONDUCT.md).
+Issue と Pull Request を歓迎します。[Code of Conduct](CODE_OF_CONDUCT.md) に従ってください。
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Tescon project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/tescon/blob/main/CODE_OF_CONDUCT.md).
+MIT — 詳細は [LICENSE.txt](LICENSE.txt)
