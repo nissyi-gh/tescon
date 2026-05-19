@@ -95,6 +95,7 @@ tescon --fixtures-hints spec/models/user_spec.rb
 | `expect_be_nil` | `expect(x).to be_nil` | `expect(x).must_be_nil` |
 | `expect_be_nil` | `expect(x).not_to be_nil` | `expect(x).wont_be_nil` |
 | `expect_be_truthy` | `expect(x).to be_truthy` / `be_falsey` | `expect(x).must_equal true` / `false` |
+| `before_each` | `before(:each)` / `after(:each)` | `before` / `after` |
 
 ## 意図的に変換しないもの
 
@@ -103,7 +104,7 @@ tescon --fixtures-hints spec/models/user_spec.rb
 - `shared_examples` / `shared_context`
 - `receive` / `have_received` などのモック
 - `let` / `let!`（今後のバージョンで追加予定）
-- `before` / `after`（`:each` 明示・`:all` など）
+- `before(:all)` / `after(:all)` など（`:each` 以外のフック）
 - 上記以外のマッチャー（`include`, `raise_error` など）
 
 ## 移行後のテスト構成

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "rules/before_each"
 require_relative "rules/example_dsl"
 require_relative "rules/expect_be_nil"
 require_relative "rules/expect_be_truthy"
@@ -24,6 +25,7 @@ module Tescon
   class Analyzer
     DEFAULT_RULES = [
       Rules::RspecDescribe.new,
+      Rules::BeforeEach.new,
       Rules::ExampleDsl.new,
       Rules::Subject.new,
       Rules::ExpectBeNil.new,
