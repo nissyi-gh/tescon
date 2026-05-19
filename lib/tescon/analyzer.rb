@@ -7,9 +7,11 @@ require_relative "rules/expect_be_truthy"
 require_relative "rules/expect_eq"
 require_relative "rules/expect_include"
 require_relative "rules/expect_match"
+require_relative "rules/expect_be_present"
 require_relative "rules/expect_raise_error"
 require_relative "rules/factory_bot"
 require_relative "rules/is_expected_eq"
+require_relative "rules/let_bang"
 require_relative "rules/rspec_describe"
 require_relative "rules/subject"
 
@@ -35,8 +37,10 @@ module Tescon
       Rules::BeforeEach.new,
       Rules::ExampleDsl.new,
       Rules::Subject.new,
+      Rules::LetBang.new,
       Rules::ExpectBeNil.new,
       Rules::ExpectBeTruthy.new,
+      Rules::ExpectBePresent.new,
       Rules::ExpectEq.new,
       Rules::ExpectInclude.new,
       Rules::ExpectMatch.new,
