@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Extract `Rules::Base`, `Rules::CallVisitor`, and `Rules::ExpectMatcher` to DRY up conversion rules
+
 ### Added
 
 - `--annotate` inserts `# tescon:` review/todo comments (idempotent per rule)

@@ -1,40 +1,15 @@
 # frozen_string_literal: true
 
-require "prism"
+require_relative "base"
+require_relative "call_visitor"
 
 module Tescon
   module Rules
-    # Converts RSpec let! to minitest-spec let plus before hook.
-    class LetBang
+    class LetBang < Base
       RULE_NAME = "let_bang"
 
-      def analyze(source_file)
-        Visitor.findings(source_file)
-      end
-
-      class Visitor < Prism::Visitor
-        def self.findings(source_file)
-          new(source_file).tap { |visitor| visitor.visit(Prism.parse(source_file.source).value) }.findings
-        end
-
-        attr_reader :findings
-
-        def initialize(source_file)
-          @source_file = source_file
-          @findings = []
-          super()
-        end
-
-        def visit_call_node(node)
-          finding = finding_for(node)
-          @findings << finding if finding
-
-          super
-        end
-
+      class Visitor < CallVisitor
         private
-
-        attr_reader :source_file
 
         def finding_for(node)
           return unless let_bang_call?(node)

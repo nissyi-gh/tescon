@@ -2,15 +2,12 @@
 
 require "prism"
 
+require_relative "base"
+
 module Tescon
   module Rules
-    # Converts RSpec one-liner is_expected eq matchers to minitest assertions on subject/let.
-    class IsExpectedEq
+    class IsExpectedEq < Base
       RULE_NAME = "is_expected_eq"
-
-      def analyze(source_file)
-        Visitor.findings(source_file)
-      end
 
       class Visitor < Prism::Visitor
         def self.findings(source_file)

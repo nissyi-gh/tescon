@@ -1,40 +1,18 @@
 # frozen_string_literal: true
 
-require "prism"
+require_relative "base"
+require_relative "call_visitor"
 
 module Tescon
   module Rules
-    # Converts RSpec example DSL method names to minitest-spec names.
-    class ExampleDsl
+    class ExampleDsl < Base
       RULE_NAME = "example_dsl"
       REPLACEMENTS = {
         context: "describe",
         specify: "it"
       }.freeze
 
-      def analyze(source_file)
-        Visitor.findings(source_file)
-      end
-
-      class Visitor < Prism::Visitor
-        def self.findings(source_file)
-          new.tap { |visitor| visitor.visit(Prism.parse(source_file.source).value) }.findings
-        end
-
-        attr_reader :findings
-
-        def initialize
-          @findings = []
-          super
-        end
-
-        def visit_call_node(node)
-          finding = finding_for(node)
-          @findings << finding if finding
-
-          super
-        end
-
+      class Visitor < CallVisitor
         private
 
         def finding_for(node)

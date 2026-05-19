@@ -1,36 +1,14 @@
 # frozen_string_literal: true
 
-require "prism"
+require_relative "base"
+require_relative "call_visitor"
 
 module Tescon
   module Rules
-    # Finds RSpec block expect raise_error expectations for minitest assert_raises.
-    class ExpectRaiseError
+    class ExpectRaiseError < Base
       RULE_NAME = "expect_raise_error"
 
-      def analyze(source_file)
-        Visitor.findings(source_file)
-      end
-
-      class Visitor < Prism::Visitor
-        def self.findings(source_file)
-          new.tap { |visitor| visitor.visit(Prism.parse(source_file.source).value) }.findings
-        end
-
-        attr_reader :findings
-
-        def initialize
-          @findings = []
-          super()
-        end
-
-        def visit_call_node(node)
-          finding = finding_for(node)
-          @findings << finding if finding
-
-          super
-        end
-
+      class Visitor < CallVisitor
         private
 
         def finding_for(node)
