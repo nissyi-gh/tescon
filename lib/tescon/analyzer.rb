@@ -10,13 +10,17 @@ require_relative "rules/is_expected_eq"
 require_relative "rules/rspec_describe"
 require_relative "rules/subject"
 
+require_relative "notices/before_all"
+require_relative "notices/before_context"
+
 module Tescon
   SourceFile = Data.define(:path, :source)
   Finding = Data.define(:rule_name, :message, :start_offset, :end_offset, :replacement)
+  Notice = Data.define(:rule_name, :line, :severity, :message)
   FactoryBotAttribute = Data.define(:name, :value, :source, :literal)
   FactoryBotUsage = Data.define(:source_file, :strategy, :factory_name, :attributes, :context, :line)
-  AnalysisResult = Data.define(:source_file, :findings, :factory_usages) do
-    def initialize(source_file:, findings:, factory_usages: [])
+  AnalysisResult = Data.define(:source_file, :findings, :factory_usages, :notices) do
+    def initialize(source_file:, findings:, factory_usages: [], notices: [])
       super
     end
   end
@@ -36,22 +40,28 @@ module Tescon
     DEFAULT_FACTORY_RULES = [
       Rules::FactoryBot.new
     ].freeze
+    DEFAULT_NOTICE_DETECTORS = [
+      Notices::BeforeAll.new,
+      Notices::BeforeContext.new
+    ].freeze
 
-    def initialize(rules: DEFAULT_RULES, factory_rules: DEFAULT_FACTORY_RULES)
+    def initialize(rules: DEFAULT_RULES, factory_rules: DEFAULT_FACTORY_RULES, notice_detectors: DEFAULT_NOTICE_DETECTORS)
       @rules = rules
       @factory_rules = factory_rules
+      @notice_detectors = notice_detectors
     end
 
     def analyze(source_file)
       AnalysisResult.new(
         source_file: source_file,
         findings: rules.flat_map { |rule| rule.analyze(source_file) },
-        factory_usages: factory_rules.flat_map { |rule| rule.analyze(source_file) }
+        factory_usages: factory_rules.flat_map { |rule| rule.analyze(source_file) },
+        notices: notice_detectors.flat_map { |detector| detector.analyze(source_file) }
       )
     end
 
     private
 
-    attr_reader :rules, :factory_rules
+    attr_reader :rules, :factory_rules, :notice_detectors
   end
 end

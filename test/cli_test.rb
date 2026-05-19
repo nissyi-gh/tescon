@@ -159,6 +159,40 @@ describe Tescon::CLI do
     end
   end
 
+  it "inserts review comments with --annotate" do
+    source = <<~RUBY
+      RSpec.describe User do
+        before(:all) do
+          @user = User.new
+        end
+      end
+    RUBY
+
+    with_spec_file(source) do |path|
+      exit_code, stdout, stderr = run_cli(["--annotate", path])
+
+      expect(exit_code).must_equal 0
+      expect(stdout).must_match(/# tescon: review — \[before_all\]/)
+      expect(stdout).must_match(/^describe User do/)
+      expect(stderr).must_match(/Annotations:/)
+      expect(stderr).must_match(/review\s+1/)
+    end
+  end
+
+  it "does not duplicate annotations when run twice with --annotate" do
+    source = <<~RUBY
+      before(:all) do
+      end
+    RUBY
+
+    with_spec_file(source) do |path|
+      run_cli(["--annotate", path])
+      _exit_code, stdout, _stderr = run_cli(["--annotate", path])
+
+      expect(stdout.scan("# tescon:").length).must_equal 1
+    end
+  end
+
   it "prints help to stdout and exits 0" do
     exit_code, stdout, stderr = run_cli(["--help"])
 
@@ -167,6 +201,7 @@ describe Tescon::CLI do
     expect(stdout).must_match(/--write/)
     expect(stdout).must_match(/--output/)
     expect(stdout).must_match(/--fixtures-hints/)
+    expect(stdout).must_match(/--annotate/)
     expect(stderr).must_equal ""
   end
 

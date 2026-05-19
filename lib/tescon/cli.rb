@@ -3,6 +3,7 @@
 require "optparse"
 
 require_relative "analyzer"
+require_relative "annotator"
 require_relative "fixtures_hint"
 require_relative "rewriter"
 require_relative "version"
@@ -19,6 +20,7 @@ module Tescon
       @write = false
       @output_path = nil
       @fixtures_hints = false
+      @annotate = false
     end
 
     def run
@@ -46,6 +48,7 @@ module Tescon
         opts.on("-w", "--write", "Overwrite input files in place") { @write = true }
         opts.on("-o", "--output PATH", "Write output to PATH") { |path| @output_path = path }
         opts.on("--fixtures-hints", "Print FactoryBot fixture YAML hints") { @fixtures_hints = true }
+        opts.on("--annotate", "Insert review/todo comments for manual migration steps") { @annotate = true }
 
         opts.on("-h", "--help", "Show this message") do
           @stdout.puts opts.help
@@ -69,6 +72,7 @@ module Tescon
 
       changed_files = 0
       findings_by_rule = Hash.new(0)
+      notices_by_severity = Hash.new(0)
       had_error = false
       output = +""
 
@@ -79,12 +83,13 @@ module Tescon
           next
         end
 
-        source, converted, findings = result
+        source, converted, findings, applied_notices = result
         changed = converted != source
 
         if changed
           changed_files += 1
           findings.each { |finding| findings_by_rule[finding.rule_name] += 1 }
+          applied_notices.each { |notice| notices_by_severity[notice.severity] += 1 }
           File.write(path, converted) if @write
         end
 
@@ -92,7 +97,7 @@ module Tescon
       end
 
       write_output(output) unless @write
-      print_summary(changed_files, findings_by_rule)
+      print_summary(changed_files, findings_by_rule, notices_by_severity)
       had_error ? 1 : 0
     end
 
@@ -129,8 +134,18 @@ module Tescon
       analysis_result = analyze_file(path)
       return unless analysis_result
 
+      source = analysis_result.source_file.source
       rewrite_result = Rewriter.new.rewrite(analysis_result)
-      [analysis_result.source_file.source, rewrite_result.converted_source, rewrite_result.changes]
+      converted = rewrite_result.converted_source
+      applied_notices = []
+
+      if @annotate && analysis_result.notices.any?
+        annotate_result = Annotator.new.apply(converted, analysis_result.notices)
+        converted = annotate_result.source
+        applied_notices = annotate_result.applied
+      end
+
+      [source, converted, rewrite_result.changes, applied_notices]
     end
 
     def analyze_file(path)
@@ -147,16 +162,25 @@ module Tescon
       nil
     end
 
-    def print_summary(changed_files, findings_by_rule)
+    def print_summary(changed_files, findings_by_rule, notices_by_severity)
       if changed_files.zero?
         @stderr.puts "No changes."
         return
       end
 
       @stderr.puts "Changed #{changed_files} #{changed_files == 1 ? "file" : "files"}"
-      width = findings_by_rule.keys.map(&:length).max
-      findings_by_rule.sort.each do |rule_name, count|
-        @stderr.puts "  #{rule_name.ljust(width)}  #{count}"
+      unless findings_by_rule.empty?
+        width = findings_by_rule.keys.map(&:length).max
+        findings_by_rule.sort.each do |rule_name, count|
+          @stderr.puts "  #{rule_name.ljust(width)}  #{count}"
+        end
+      end
+
+      return if notices_by_severity.empty?
+
+      @stderr.puts "Annotations:"
+      notices_by_severity.sort.each do |severity, count|
+        @stderr.puts "  #{severity}  #{count}"
       end
     end
   end

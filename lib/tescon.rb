@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "tescon/analyzer"
+require_relative "tescon/annotator"
 require_relative "tescon/cli"
 require_relative "tescon/converter"
 require_relative "tescon/fixtures_hint"

@@ -72,6 +72,23 @@ tescon --fixtures-hints spec/models/user_spec.rb
 
 リテラルで書かれた属性は YAML に展開し、動的な値は `# TODO` コメントとして残します。
 
+### 移行時の review / todo コメント
+
+`--annotate` を付けると、人手確認が必要な箇所の直前に `# tescon:` コメントを挿入します（変換ルールと併用可能）。
+
+```bash
+tescon --annotate spec/models/user_spec.rb
+```
+
+例:
+
+```ruby
+# tescon: review — [before_all] before(:all) left unchanged; verify DB isolation and transactional fixtures
+before(:all) do
+```
+
+同じ行の直前に同じ `[rule_name]` のコメントが既にある場合は **再挿入しません**（2 回実行しても重複しません）。
+
 ### オプション
 
 | オプション | 説明 |
@@ -79,6 +96,7 @@ tescon --fixtures-hints spec/models/user_spec.rb
 | `-w`, `--write` | 入力ファイルを上書き |
 | `-o`, `--output PATH` | 出力先ファイル（`--write` と併用不可） |
 | `--fixtures-hints` | fixture YAML ヒントを出力（変換は行わない） |
+| `--annotate` | review / todo コメントを挿入 |
 | `-h`, `--help` | ヘルプ |
 | `-v`, `--version` | バージョン |
 
@@ -104,7 +122,8 @@ tescon --fixtures-hints spec/models/user_spec.rb
 - `shared_examples` / `shared_context`
 - `receive` / `have_received` などのモック
 - `let` / `let!`（今後のバージョンで追加予定）
-- `before(:all)` / `after(:all)` など（`:each` 以外のフック）
+- `before(:all)` / `after(:all)` … 変換はしないが `--annotate` で review コメントを付与可能
+- `before(:context)` … `--annotate` で `:all` への変更を促す todo コメントを付与可能
 - 上記以外のマッチャー（`include`, `raise_error` など）
 
 ## 移行後のテスト構成
