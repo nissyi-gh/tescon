@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `expect_be_nil` rule: `expect(x).to be_nil` → `expect(x).must_be_nil`
+
 ## [0.1.0] - 2026-05-19
 
 ### Added
