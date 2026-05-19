@@ -5,6 +5,8 @@ require_relative "rules/example_dsl"
 require_relative "rules/expect_be_nil"
 require_relative "rules/expect_be_truthy"
 require_relative "rules/expect_eq"
+require_relative "rules/expect_include"
+require_relative "rules/expect_match"
 require_relative "rules/factory_bot"
 require_relative "rules/is_expected_eq"
 require_relative "rules/rspec_describe"
@@ -35,6 +37,8 @@ module Tescon
       Rules::ExpectBeNil.new,
       Rules::ExpectBeTruthy.new,
       Rules::ExpectEq.new,
+      Rules::ExpectInclude.new,
+      Rules::ExpectMatch.new,
       Rules::IsExpectedEq.new
     ].freeze
     DEFAULT_FACTORY_RULES = [
