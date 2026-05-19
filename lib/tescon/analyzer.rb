@@ -2,6 +2,7 @@
 
 require_relative "rules/example_dsl"
 require_relative "rules/expect_be_nil"
+require_relative "rules/expect_be_truthy"
 require_relative "rules/expect_eq"
 require_relative "rules/factory_bot"
 require_relative "rules/is_expected_eq"
@@ -26,6 +27,7 @@ module Tescon
       Rules::ExampleDsl.new,
       Rules::Subject.new,
       Rules::ExpectBeNil.new,
+      Rules::ExpectBeTruthy.new,
       Rules::ExpectEq.new,
       Rules::IsExpectedEq.new
     ].freeze

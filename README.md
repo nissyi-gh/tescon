@@ -94,6 +94,7 @@ tescon --fixtures-hints spec/models/user_spec.rb
 | `is_expected_eq` | `is_expected.to eq(y)` | `subject.must_equal y`（名前付き subject に対応） |
 | `expect_be_nil` | `expect(x).to be_nil` | `expect(x).must_be_nil` |
 | `expect_be_nil` | `expect(x).not_to be_nil` | `expect(x).wont_be_nil` |
+| `expect_be_truthy` | `expect(x).to be_truthy` / `be_falsey` | `expect(x).must_equal true` / `false` |
 
 ## 意図的に変換しないもの
 
@@ -101,8 +102,9 @@ tescon --fixtures-hints spec/models/user_spec.rb
 - `type: :model` などの RSpec メタデータ
 - `shared_examples` / `shared_context`
 - `receive` / `have_received` などのモック
-- `let` / `before` / `after`（今後のバージョンで追加予定）
-- 上記以外のマッチャー（`be_truthy`, `include`, `raise_error` など）
+- `let` / `let!`（今後のバージョンで追加予定）
+- `before` / `after`（`:each` 明示・`:all` など）
+- 上記以外のマッチャー（`include`, `raise_error` など）
 
 ## 移行後のテスト構成
 
