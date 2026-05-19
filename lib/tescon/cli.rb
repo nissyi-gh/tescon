@@ -6,6 +6,7 @@ require_relative "analyzer"
 require_relative "annotator"
 require_relative "fixtures_hint"
 require_relative "rewriter"
+require_relative "source_header"
 require_relative "version"
 
 module Tescon
@@ -21,6 +22,7 @@ module Tescon
       @output_path = nil
       @fixtures_hints = false
       @annotate = false
+      @mark_source = false
     end
 
     def run
@@ -49,6 +51,7 @@ module Tescon
         opts.on("-o", "--output PATH", "Write output to PATH") { |path| @output_path = path }
         opts.on("--fixtures-hints", "Print FactoryBot fixture YAML hints") { @fixtures_hints = true }
         opts.on("--annotate", "Insert review/todo comments for manual migration steps") { @annotate = true }
+        opts.on("--mark-source", "Insert a converted-from source path comment at the top") { @mark_source = true }
 
         opts.on("-h", "--help", "Show this message") do
           @stdout.puts opts.help
@@ -143,6 +146,11 @@ module Tescon
         annotate_result = Annotator.new.apply(converted, analysis_result.notices)
         converted = annotate_result.source
         applied_notices = annotate_result.applied
+      end
+
+      if @mark_source
+        marker_result = SourceHeader.new.apply(converted, path)
+        converted = marker_result.source
       end
 
       [source, converted, rewrite_result.changes, applied_notices]

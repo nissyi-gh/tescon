@@ -89,6 +89,23 @@ before(:all) do
 
 同じ行の直前に同じ `[rule_name]` のコメントが既にある場合は **再挿入しません**（2 回実行しても重複しません）。
 
+### 変換元ファイルの記録
+
+`-o` で別パスに書き出すときなど、出力がどの spec 由来か分かるように先頭コメントを付けられます。
+
+```bash
+tescon --mark-source -o test/models/user_spec.rb spec/models/user_spec.rb
+```
+
+```ruby
+# tescon: converted from spec/models/user_spec.rb
+describe User do
+  # ...
+end
+```
+
+`# frozen_string_literal: true` がある場合はその直後に挿入します。同じパスで 2 回実行しても重複しません。
+
 ### オプション
 
 | オプション | 説明 |
@@ -97,6 +114,7 @@ before(:all) do
 | `-o`, `--output PATH` | 出力先ファイル（`--write` と併用不可） |
 | `--fixtures-hints` | fixture YAML ヒントを出力（変換は行わない） |
 | `--annotate` | review / todo コメントを挿入 |
+| `--mark-source` | 変換元 spec パスをファイル先頭にコメント |
 | `-h`, `--help` | ヘルプ |
 | `-v`, `--version` | バージョン |
 

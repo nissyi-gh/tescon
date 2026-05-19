@@ -159,6 +159,35 @@ describe Tescon::CLI do
     end
   end
 
+  it "inserts a converted-from comment with --mark-source" do
+    source = <<~RUBY
+      RSpec.describe User do
+      end
+    RUBY
+
+    with_spec_file(source) do |path|
+      exit_code, stdout, _stderr = run_cli(["--mark-source", path])
+
+      expect(exit_code).must_equal 0
+      expect(stdout).must_match(/# tescon: converted from #{Regexp.escape(path)}/)
+      expect(stdout).must_match(/^describe User do/)
+    end
+  end
+
+  it "does not duplicate converted-from comments when run twice with --mark-source" do
+    source = <<~RUBY
+      RSpec.describe User do
+      end
+    RUBY
+
+    with_spec_file(source) do |path|
+      run_cli(["--mark-source", path])
+      _exit_code, stdout, _stderr = run_cli(["--mark-source", path])
+
+      expect(stdout.scan("# tescon: converted from").length).must_equal 1
+    end
+  end
+
   it "inserts review comments with --annotate" do
     source = <<~RUBY
       RSpec.describe User do
@@ -202,6 +231,7 @@ describe Tescon::CLI do
     expect(stdout).must_match(/--output/)
     expect(stdout).must_match(/--fixtures-hints/)
     expect(stdout).must_match(/--annotate/)
+    expect(stdout).must_match(/--mark-source/)
     expect(stderr).must_equal ""
   end
 
