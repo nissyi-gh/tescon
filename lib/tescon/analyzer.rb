@@ -9,6 +9,7 @@ require_relative "rules/expect_include"
 require_relative "rules/expect_match"
 require_relative "rules/expect_be_present"
 require_relative "rules/expect_be_valid"
+require_relative "rules/expect_be_kind_of"
 require_relative "rules/expect_raise_error"
 require_relative "rules/factory_bot"
 require_relative "rules/is_expected_eq"
@@ -43,6 +44,7 @@ module Tescon
       Rules::ExpectBeTruthy.new,
       Rules::ExpectBePresent.new,
       Rules::ExpectBeValid.new,
+      Rules::ExpectBeKindOf.new,
       Rules::ExpectEq.new,
       Rules::ExpectInclude.new,
       Rules::ExpectMatch.new,

@@ -120,6 +120,8 @@ before(:all) do
 | `let_bang` | `let!(:user) { ... }` | `let(:user) { ... }` + `before { user }` |
 | `expect_be_present` | `be_present` / `be_blank` / `be_empty` | `must_be :present?` など |
 | `expect_be_valid` | `be_valid` / `be_invalid` | `must_be :valid?` / `:invalid?` |
+| `expect_be_kind_of` | `be_a` / `be_an` | `must_be_instance_of` |
+| `expect_be_kind_of` | `be_kind_of` / `be_a_kind_of` | `must_be_kind_of` |
 
 ## 意図的に変換しないもの
 
