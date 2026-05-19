@@ -114,6 +114,9 @@ before(:all) do
 | `expect_be_nil` | `expect(x).not_to be_nil` | `expect(x).wont_be_nil` |
 | `expect_be_truthy` | `expect(x).to be_truthy` / `be_falsey` | `expect(x).must_equal true` / `false` |
 | `before_each` | `before(:each)` / `after(:each)` | `before` / `after` |
+| `expect_include` | `expect(x).to include(y)` | `expect(x).must_include y` |
+| `expect_match` | `expect(x).to match(/re/)` | `expect(x).must_match /re/` |
+| `expect_raise_error` | `expect { }.to raise_error(Error)` | `assert_raises(Error) { }` |
 
 ## 意図的に変換しないもの
 
@@ -124,7 +127,8 @@ before(:all) do
 - `let` / `let!`（今後のバージョンで追加予定）
 - `before(:all)` / `after(:all)` … 変換はしないが `--annotate` で review コメントを付与可能
 - `before(:context)` … `--annotate` で `:all` への変更を促す todo コメントを付与可能
-- 上記以外のマッチャー（`include`, `raise_error` など）
+- `expect { }.not_to raise_error`（`assert_raises` と 1:1 でないため）
+- 上記以外のマッチャー（`receive`, `change` など）
 
 ## 移行後のテスト構成
 
