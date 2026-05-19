@@ -26,4 +26,21 @@ describe Tescon::Rules::RspecDescribe do
 
     expect(convert(source)).must_equal expected
   end
+
+  it "does not convert RSpec.describe inside strings" do
+    source = <<~RUBY
+      message = 'RSpec.describe User do end'
+    RUBY
+
+    expect(convert(source)).must_equal source
+  end
+
+  it "does not convert receiver method calls" do
+    source = <<~RUBY
+      helper.RSpec.describe User do
+      end
+    RUBY
+
+    expect(convert(source)).must_equal source
+  end
 end
