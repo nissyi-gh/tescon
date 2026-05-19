@@ -117,6 +117,8 @@ before(:all) do
 | `expect_include` | `expect(x).to include(y)` | `expect(x).must_include y` |
 | `expect_match` | `expect(x).to match(/re/)` | `expect(x).must_match /re/` |
 | `expect_raise_error` | `expect { }.to raise_error(Error)` | `assert_raises(Error) { }` |
+| `let_bang` | `let!(:user) { ... }` | `let(:user) { ... }` + `before { user }` |
+| `expect_be_present` | `be_present` / `be_blank` / `be_empty` | `must_be :present?` など |
 
 ## 意図的に変換しないもの
 
@@ -124,7 +126,7 @@ before(:all) do
 - `type: :model` などの RSpec メタデータ
 - `shared_examples` / `shared_context`
 - `receive` / `have_received` などのモック
-- `let` / `let!`（今後のバージョンで追加予定）
+- `let`（RSpec と minitest-spec で同じ構文のため変更不要）
 - `before(:all)` / `after(:all)` … 変換はしないが `--annotate` で review コメントを付与可能
 - `before(:context)` … `--annotate` で `:all` への変更を促す todo コメントを付与可能
 - `expect { }.not_to raise_error`（`assert_raises` と 1:1 でないため）

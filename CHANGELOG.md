@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--annotate` inserts `# tescon:` review/todo comments (idempotent per rule)
 - Notice detectors for `before(:all)` / `after(:all)` and `before(:context)` / `after(:context)`
 - `expect_include`, `expect_match`, and `expect_raise_error` conversion rules
+- `let_bang` rule: `let!(:name)` → `let(:name)` + `before { name }`
+- `expect_be_present` rule: `be_present` / `be_blank` / `be_empty` → `must_be` predicates
 - `expect_be_nil` rule: `expect(x).to be_nil` → `expect(x).must_be_nil`
 - `expect_be_truthy` rule: `expect(x).to be_truthy` / `be_falsey` → `must_equal` / `wont_equal`
 - `before_each` rule: `before(:each)` / `after(:each)` → `before` / `after`
