@@ -119,6 +119,7 @@ before(:all) do
 | `expect_raise_error` | `expect { }.to raise_error(Error)` | `assert_raises(Error) { }` |
 | `let_bang` | `let!(:user) { ... }` | `let(:user) { ... }` + `before { user }` |
 | `expect_be_present` | `be_present` / `be_blank` / `be_empty` | `must_be :present?` など |
+| `expect_be_valid` | `be_valid` / `be_invalid` | `must_be :valid?` / `:invalid?` |
 
 ## 意図的に変換しないもの
 
