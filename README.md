@@ -72,6 +72,32 @@ tescon --fixtures-hints spec/models/user_spec.rb
 
 リテラルで書かれた属性は YAML に展開し、動的な値は `# TODO` コメントとして残します。
 
+### FactoryBot の runtime trace（provenance YAML）
+
+RSpec 実行中に `FactoryBot.create` / `create_list` と、その呼び出し中に insert された ActiveRecord レコードを記録し、**provenance YAML** を出力します。
+
+これは `--fixtures-hints`（静的解析）とは別機能です。trait や callback の実行結果を観測する用途向けです。
+
+`spec/rails_helper.rb` などで読み込みます:
+
+```ruby
+require "tescon/trace"
+```
+
+RSpec suite 終了時に `tmp/tescon/provenance.yml` へ書き出します。出力先は環境変数で変更できます:
+
+```bash
+TESCON_TRACE_PATH=tmp/tescon/provenance.yml bundle exec rspec
+```
+
+**分類ルール（MVP）**
+
+- FactoryBot 呼び出し中に insert されたレコード → `setup`
+- example 中だが factory 呼び出し外の insert → `side_effect`
+- `build` / `build_stubbed` / `attributes_for` は記録しない
+
+fixture 候補生成や spec 書き換えはまだ行いません。provenance YAML が第一級成果物です。
+
 ### 移行時の review / todo コメント
 
 `--annotate` を付けると、人手確認が必要な箇所の直前に `# tescon:` コメントを挿入します（変換ルールと併用可能）。
