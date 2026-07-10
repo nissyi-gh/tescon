@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "path_normalizer"
+
 module Tescon
   module Trace
     # Hooks RSpec examples and suite teardown to drive the recorder.
@@ -12,9 +14,10 @@ module Tescon
             metadata = example.metadata
             Tescon::Trace.recorder.start_example(
               id: "#{metadata[:file_path]}:#{metadata[:line_number]}",
-              file: metadata[:file_path],
+              file: PathNormalizer.relativize(metadata[:file_path]),
               line: metadata[:line_number],
-              description: example.description
+              description: example.description,
+              full_description: metadata[:full_description]
             )
 
             example.run

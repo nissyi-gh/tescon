@@ -13,7 +13,8 @@ describe Tescon::Trace::YamlWriter do
       id: "spec/models/order_spec.rb:42",
       file: "spec/models/order_spec.rb",
       line: 42,
-      description: "marks as paid"
+      description: "marks as paid",
+      full_description: "Order#paid marks as paid"
     )
     recorder.enter_factory_call(
       strategy: :create,
@@ -44,6 +45,8 @@ describe Tescon::Trace::YamlWriter do
     expect(data["meta"]["schema_version"]).must_equal "1"
     expect(data["meta"]["source_spec"]).must_equal "spec/models/order_spec.rb"
     expect(data["examples"].length).must_equal 1
+    expect(data["examples"].first["full_description"]).must_equal "Order#paid marks as paid"
+    expect(data["examples"].first["factory_calls"].first["call_id"]).must_equal 1
     expect(data["examples"].first["factory_calls"].first["factory"]).must_equal "order"
     expect(data["examples"].first["factory_calls"].first["traits"]).must_equal ["paid"]
     record = data["examples"].first["factory_calls"].first["records"].first

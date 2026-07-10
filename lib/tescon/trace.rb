@@ -3,6 +3,7 @@
 require_relative "trace/config"
 require_relative "trace/provenance"
 require_relative "trace/attribute_normalizer"
+require_relative "trace/path_normalizer"
 require_relative "trace/recorder"
 require_relative "trace/yaml_writer"
 require_relative "trace/factory_bot"

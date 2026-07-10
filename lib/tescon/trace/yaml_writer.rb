@@ -5,6 +5,7 @@ require "yaml"
 
 require_relative "../version"
 require_relative "recorder"
+require_relative "path_normalizer"
 
 module Tescon
   module Trace
@@ -37,7 +38,7 @@ module Tescon
       end
 
       def dump_file(recorder, examples, source_spec:)
-        relative_path = source_spec.sub(/\.rb\z/, "")
+        relative_path = PathNormalizer.relativize_spec_path(source_spec)
         path = File.join(output_dir, "#{relative_path}.yml")
         FileUtils.mkdir_p(File.dirname(path))
 
@@ -59,7 +60,7 @@ module Tescon
         meta = {
           "schema_version" => "1",
           "generated_by" => "tescon",
-          "source_spec" => source_spec,
+          "source_spec" => PathNormalizer.relativize(source_spec),
           "generated_at" => Time.now.utc.iso8601(3),
           "tescon_version" => Tescon::VERSION
         }
