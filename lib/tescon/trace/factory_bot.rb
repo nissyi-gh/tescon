@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "path_normalizer"
+
 module Tescon
   module Trace
     # Patches FactoryBot create APIs to record provenance.
@@ -10,7 +12,7 @@ module Tescon
         end
 
         def create_list(*args, **kwargs, &block)
-          factory_name, traits, overrides = ArgumentParser.parse_list(*args, **kwargs)
+          factory_name, traits, overrides, count = ArgumentParser.parse_list(*args, **kwargs)
           return super(*args, **kwargs, &block) unless factory_name
 
           trace_entered = false
@@ -20,6 +22,7 @@ module Tescon
               factory_name: factory_name,
               traits: traits,
               overrides: overrides,
+              count: count,
               caller: CallerLocation.format
             )
             trace_entered = true
@@ -68,12 +71,12 @@ module Tescon
         def parse_list(*args, **kwargs)
           remaining = args.dup
           factory_name = shift_factory_name(remaining)
-          remaining.shift if remaining.first.is_a?(Integer)
+          count = remaining.first.is_a?(Integer) ? remaining.shift : nil
           traits = shift_traits(remaining)
           overrides = kwargs.dup
           overrides.merge!(remaining.shift) if remaining.first.is_a?(Hash)
 
-          [factory_name, traits, stringify_keys(overrides)]
+          [factory_name, traits, stringify_keys(overrides), count]
         end
 
         def stringify_keys(hash)
@@ -106,7 +109,7 @@ module Tescon
           end
           return "unknown" unless location
 
-          "#{location.path}:#{location.lineno}"
+          PathNormalizer.relativize_caller("#{location.path}:#{location.lineno}")
         end
       end
 

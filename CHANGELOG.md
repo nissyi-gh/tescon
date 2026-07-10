@@ -10,8 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Extract `Rules::Base`, `Rules::CallVisitor`, and `Rules::ExpectMatcher` to DRY up conversion rules
+- Runtime trace provenance output is now split per spec file under `tmp/tescon/provenance/`
+- `TESCON_TRACE_PATH` now points to an output directory instead of a single YAML file
+- Provenance `attributes` exclude `id`, `created_at`, and `updated_at` by default
 
 ### Added
+
+- Runtime trace provenance improvements: ISO 8601 timestamps, `meta` header block, `full_description`, `call_id` / `parent_call_id` for `create_list`, association `via` / `links`, side-effect `caller`, and relative paths
+- `TESCON_TRACE_FULL_ATTRIBUTES` to include `id` and timestamps in provenance attributes
 
 - `--annotate` inserts `# tescon:` review/todo comments (idempotent per rule)
 - Notice detectors for `before(:all)` / `after(:all)` and `before(:context)` / `after(:context)`
