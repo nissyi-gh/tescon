@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "fileutils"
 require "yaml"
 require_relative "../support/trace_stubs"
 require "tescon/trace"
@@ -26,18 +27,19 @@ describe "Tescon runtime trace integration" do
 
     Tescon::Trace.recorder.finish_example
 
-    path = File.join(Dir.tmpdir, "tescon-integration-#{Process.pid}.yml")
-    Tescon::Trace::YamlWriter.new(path).dump(Tescon::Trace.recorder)
-    data = YAML.safe_load(File.read(path))
+    output_dir = File.join(Dir.tmpdir, "tescon-integration-#{Process.pid}")
+    paths = Tescon::Trace::YamlWriter.new(output_dir).dump_all(Tescon::Trace.recorder)
+    data = YAML.safe_load(File.read(paths.first))
 
     example = data["examples"].first
+    expect(data["meta"]["schema_version"]).must_equal "1"
     expect(example["factory_calls"].length).must_equal 2
     expect(example["factory_calls"].first["factory"]).must_equal "order"
     expect(example["factory_calls"].first["traits"]).must_equal ["paid"]
     expect(example["factory_calls"].first["records"].first["classification"]).must_equal "setup"
     expect(example["side_effect_records"].first["classification"]).must_equal "side_effect"
   ensure
-    File.delete(path) if path && File.exist?(path)
+    FileUtils.rm_rf(output_dir) if output_dir && Dir.exist?(output_dir)
   end
 
   it "does not reinstall factory bot patches" do

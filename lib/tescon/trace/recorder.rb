@@ -74,10 +74,18 @@ module Tescon
         snapshot
       end
 
-      def to_h
+      def to_h(examples: self.examples)
         {
           "examples" => examples.map { |example| example_to_h(example) }
         }
+      end
+
+      def examples_by_file
+        examples.group_by(&:file)
+      end
+
+      def example_hashes(examples: self.examples)
+        examples.map { |example| example_to_h(example) }
       end
 
       private

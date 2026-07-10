@@ -4,10 +4,15 @@ module Tescon
   module Trace
     # Runtime configuration for provenance tracing.
     class Config
+      DEFAULT_OUTPUT_DIR = "tmp/tescon/provenance"
       TRUTHY_VALUES = %w[1 true yes].freeze
 
       def full_attributes?
         truthy?(ENV["TESCON_TRACE_FULL_ATTRIBUTES"])
+      end
+
+      def output_dir
+        ENV.fetch("TESCON_TRACE_PATH", DEFAULT_OUTPUT_DIR)
       end
 
       def project_root

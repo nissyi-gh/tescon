@@ -14,6 +14,12 @@ describe Tescon::Trace::Config do
     end
   end
 
+  it "reads output directory from environment" do
+    with_env("TESCON_TRACE_PATH" => "tmp/custom-provenance") do
+      expect(Tescon::Trace::Config.new.output_dir).must_equal "tmp/custom-provenance"
+    end
+  end
+
   private
 
   def with_env(overrides)

@@ -23,7 +23,7 @@ module Tescon
           end
 
           config.after(:suite) do
-            Tescon::Trace::YamlWriter.dump(Tescon::Trace.recorder)
+            Tescon::Trace::YamlWriter.dump_all(Tescon::Trace.recorder)
           end
         end
 
