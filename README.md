@@ -105,7 +105,12 @@ TESCON_TRACE_FULL_ATTRIBUTES=1 bundle exec rspec
 - FactoryBot 呼び出し中に insert されたレコード → `setup`
 - example 中だが factory 呼び出し外の insert / update → `side_effect`
 - association 経由の insert → `via: association`
-- `build` / `build_stubbed` / `attributes_for` は記録しない
+
+**記録対象外**
+
+- `build` / `build_stubbed` / `attributes_for`
+- RSpec example / `before(:context)` スコープ外の AR 操作
+  （例: `before(:suite)` の SeedDo、`rails_helper` 読み込み時の DB 操作）
 
 **before(:context) / inherited_setup**
 

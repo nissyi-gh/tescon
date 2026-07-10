@@ -242,6 +242,20 @@ describe Tescon::Trace::Recorder do
     end.must_raise Tescon::Error
   end
 
+  it "no-ops record_insert when no active example" do
+    recorder = Tescon::Trace::Recorder.new
+
+    expect(recorder.record_insert(model: "User", table: "users", id: 1, attributes: {})).must_be_nil
+    expect(recorder.examples).must_be_empty
+  end
+
+  it "no-ops record_update when no active example" do
+    recorder = Tescon::Trace::Recorder.new
+
+    expect(recorder.record_update(model: "User", table: "users", id: 1, attributes: {})).must_be_nil
+    expect(recorder.examples).must_be_empty
+  end
+
   it "records factory calls during before(:context) setup" do
     recorder = Tescon::Trace::Recorder.new
 
