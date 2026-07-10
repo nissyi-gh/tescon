@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require_relative "../support/trace_stubs"
 require "tescon/trace/recorder"
 require "tescon/trace/factory_bot"
 
@@ -164,6 +165,67 @@ describe Tescon::Trace::Recorder do
     expect(list_call.strategy).must_equal :create_list
     expect(list_call.count).must_equal 2
     expect(child_calls.map(&:parent_call_id)).must_equal [1, 1]
+  end
+
+  it "normalizes ActiveRecord overrides into foreign keys" do
+    recorder = Tescon::Trace::Recorder.new
+    user = User.new("email" => "alice@example.com").tap(&:save)
+
+    recorder.start_example(
+      id: "spec/models/order_spec.rb:10",
+      file: "spec/models/order_spec.rb",
+      line: 10,
+      description: "creates order with user"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :order,
+      traits: [],
+      overrides: { user: user },
+      caller: "spec/models/order_spec.rb:12"
+    )
+    recorder.exit_factory_call
+    recorder.finish_example
+
+    expect(recorder.examples.first.factory_calls.first.overrides).must_equal(
+      "user_id" => user.id
+    )
+  end
+
+  it "omits caller from nested factory calls with parent_call_id" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.start_example(
+      id: "spec/models/user_spec.rb:10",
+      file: "spec/models/user_spec.rb",
+      line: 10,
+      description: "creates users"
+    )
+    recorder.enter_factory_call(
+      strategy: :create_list,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      count: 2,
+      caller: "spec/models/user_spec.rb:12"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      caller: "spec/models/user_spec.rb:13"
+    )
+    recorder.exit_factory_call
+    recorder.exit_factory_call
+    recorder.finish_example
+
+    example_hash = recorder.example_hashes.first
+    parent_call = example_hash["factory_calls"].first
+    child_call = example_hash["factory_calls"][1]
+
+    expect(parent_call["caller"]).must_equal "spec/models/user_spec.rb:12"
+    expect(child_call.key?("caller")).must_equal false
   end
 
   it "raises when recording outside an example" do

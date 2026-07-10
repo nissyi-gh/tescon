@@ -10,8 +10,24 @@ module Tescon
         new(full: full).normalize(attributes)
       end
 
+      def self.normalize_overrides(overrides)
+        new.normalize_overrides(overrides)
+      end
+
       def initialize(full: false)
         @full = full
+      end
+
+      def normalize_overrides(overrides)
+        return {} if overrides.nil?
+
+        overrides.each_with_object({}) do |(key, value), normalized|
+          if active_record?(value)
+            normalized[foreign_key_for(key.to_s)] = value.id
+          else
+            normalized[key.to_s] = normalize_value(value)
+          end
+        end
       end
 
       def normalize(attributes)
@@ -53,6 +69,16 @@ module Tescon
         else
           value.iso8601(3)
         end
+      end
+
+      def active_record?(value)
+        return false unless defined?(::ActiveRecord::Base)
+
+        value.is_a?(::ActiveRecord::Base) && value.persisted?
+      end
+
+      def foreign_key_for(key)
+        key.end_with?("_id") ? key : "#{key}_id"
       end
     end
   end

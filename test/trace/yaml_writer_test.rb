@@ -56,6 +56,41 @@ describe Tescon::Trace::YamlWriter do
     FileUtils.rm_rf(output_dir) if output_dir && Dir.exist?(output_dir)
   end
 
+  it "serializes rails_env as a string" do
+    rails = Class.new do
+      def self.env
+        Struct.new(:to_s).new("test")
+      end
+    end
+    output_dir = nil
+    had_rails = Object.const_defined?(:Rails)
+    original_rails = Object.const_get(:Rails) if had_rails
+    Object.const_set(:Rails, rails)
+    begin
+      recorder = Tescon::Trace::Recorder.new
+      recorder.start_example(
+        id: "spec/models/user_spec.rb:10",
+        file: "spec/models/user_spec.rb",
+        line: 10,
+        description: "creates user"
+      )
+      recorder.finish_example
+
+      output_dir = File.join(Dir.tmpdir, "tescon-provenance-rails-env-#{Process.pid}")
+      paths = Tescon::Trace::YamlWriter.new(output_dir).dump_all(recorder)
+
+      data = YAML.safe_load(File.read(paths.first))
+      expect(data["meta"]["rails_env"]).must_equal "test"
+    ensure
+      if had_rails
+        Object.const_set(:Rails, original_rails)
+      else
+        Object.send(:remove_const, :Rails)
+      end
+      FileUtils.rm_rf(output_dir) if output_dir && Dir.exist?(output_dir)
+    end
+  end
+
   it "writes separate files per spec file" do
     recorder = Tescon::Trace::Recorder.new
 

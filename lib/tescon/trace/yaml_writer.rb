@@ -64,7 +64,7 @@ module Tescon
           "generated_at" => Time.now.utc.iso8601(3),
           "tescon_version" => Tescon::VERSION
         }
-        meta["rails_env"] = ::Rails.env if defined?(::Rails) && ::Rails.respond_to?(:env)
+        meta["rails_env"] = ::Rails.env.to_s if defined?(::Rails) && ::Rails.respond_to?(:env)
         meta
       end
     end

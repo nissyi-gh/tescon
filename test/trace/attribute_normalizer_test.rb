@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "fileutils"
+require_relative "../support/trace_stubs"
 require "tescon/trace/attribute_normalizer"
 
 describe Tescon::Trace::AttributeNormalizer do
@@ -61,5 +62,32 @@ describe Tescon::Trace::AttributeNormalizer do
     )
 
     expect(normalized["amount"]).must_equal "12.5"
+  end
+
+  it "collapses ActiveRecord overrides to foreign key ids" do
+    user = User.new("email" => "alice@example.com").tap(&:save)
+
+    normalized = Tescon::Trace::AttributeNormalizer.normalize_overrides(
+      "user" => user,
+      "user_id" => user
+    )
+
+    expect(normalized).must_equal(
+      "user_id" => user.id
+    )
+  end
+
+  it "normalizes non-scalar override values" do
+    timestamp = Time.utc(2026, 7, 10, 16, 11, 8)
+
+    normalized = Tescon::Trace::AttributeNormalizer.normalize_overrides(
+      "scheduled_at" => timestamp,
+      "metadata" => { "source" => "spec" }
+    )
+
+    expect(normalized).must_equal(
+      "scheduled_at" => "2026-07-10T16:11:08.000Z",
+      "metadata" => { "source" => "spec" }
+    )
   end
 end

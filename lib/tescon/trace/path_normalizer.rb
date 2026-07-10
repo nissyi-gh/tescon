@@ -30,6 +30,23 @@ module Tescon
         lineno ? "#{relative_path}:#{lineno}" : relative_path
       end
 
+      FACTORY_BOT_CALLER = "<factory_bot>"
+
+      def sanitize_caller(caller, root: Tescon::Trace.config.project_root)
+        return caller if caller.nil? || caller.empty? || caller == "unknown"
+        return FACTORY_BOT_CALLER if caller == FACTORY_BOT_CALLER
+
+        file_path, _lineno = split_caller(caller)
+        root_str = File.expand_path(root.to_s)
+        expanded = File.expand_path(file_path)
+
+        unless expanded.start_with?(root_str + File::SEPARATOR) || expanded == root_str
+          return FACTORY_BOT_CALLER
+        end
+
+        relativize_caller(caller, root: root)
+      end
+
       def relativize_spec_path(spec_path)
         relativize(spec_path).sub(/\.rb\z/, "")
       end
