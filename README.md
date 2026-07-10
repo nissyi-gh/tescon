@@ -105,7 +105,7 @@ TESCON_TRACE_FULL_ATTRIBUTES=1 bundle exec rspec
 - association 経由の insert → `via: association`
 - `build` / `build_stubbed` / `attributes_for` は記録しない
 
-`create_list` は `call_id` / `parent_call_id` で親子関係を記録します。`caller` はプロジェクトルートからの相対パスです。
+`create_list` は `call_id` / `parent_call_id` で親子関係を記録します。`caller` はプロジェクトルートからの相対パスです。`create_list` 内側の `create` は `caller` を省略し、gem 内部パスは `"<factory_bot>"` に置換します。
 
 fixture 候補生成や spec 書き換えはまだ行いません。provenance YAML が第一級成果物です。
 

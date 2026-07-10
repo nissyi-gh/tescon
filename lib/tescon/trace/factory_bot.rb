@@ -101,15 +101,35 @@ module Tescon
       end
 
       module CallerLocation
+        INTERNAL_PATH_PATTERNS = %w[
+          tescon/trace
+          active_record
+          activerecord
+          factory_bot
+        ].freeze
+
         module_function
 
         def format
           location = caller_locations.find do |entry|
-            !entry.path.include?("tescon/trace")
+            !internal_frame?(entry)
           end
-          return "unknown" unless location
+          return PathNormalizer::FACTORY_BOT_CALLER unless location
 
-          PathNormalizer.relativize_caller("#{location.path}:#{location.lineno}")
+          PathNormalizer.sanitize_caller("#{location.path}:#{location.lineno}")
+        end
+
+        def internal_frame?(entry)
+          path = entry.path
+          return true if INTERNAL_PATH_PATTERNS.any? { |pattern| path.include?(pattern) }
+          return true if gem_path?(path)
+
+          false
+        end
+
+        def gem_path?(path)
+          expanded = File.expand_path(path)
+          expanded.include?("/gems/") || expanded.include?("/vendor/bundle/")
         end
       end
 

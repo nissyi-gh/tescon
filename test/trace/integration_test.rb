@@ -63,6 +63,15 @@ describe "Tescon runtime trace integration" do
     expect(list_call.count).must_equal 2
     expect(child_calls.length).must_equal 2
     expect(child_calls.map(&:parent_call_id).uniq).must_equal [list_call.call_id]
+
+    output_dir = File.join(Dir.tmpdir, "tescon-integration-create-list-#{Process.pid}")
+    paths = Tescon::Trace::YamlWriter.new(output_dir).dump_all(Tescon::Trace.recorder)
+    data = YAML.safe_load(File.read(paths.first))
+    child_calls_yaml = data["examples"].first["factory_calls"][1..]
+
+    expect(child_calls_yaml.map { |call| call.key?("caller") }).must_equal [false, false]
+  ensure
+    FileUtils.rm_rf(output_dir) if output_dir && Dir.exist?(output_dir)
   end
 
   it "does not reinstall factory bot patches" do

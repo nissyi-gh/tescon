@@ -50,8 +50,8 @@ module Tescon
           strategy: strategy,
           factory_name: factory_name,
           traits: traits,
-          overrides: overrides,
-          caller: PathNormalizer.relativize_caller(caller),
+          overrides: AttributeNormalizer.normalize_overrides(overrides),
+          caller: PathNormalizer.sanitize_caller(caller),
           count: count
         )
         current_example.factory_calls << call
@@ -68,7 +68,7 @@ module Tescon
 
         classification = factory_call_stack.empty? ? :side_effect : :setup
         via = factory_call_stack.size > 1 ? "association" : nil
-        caller = PathNormalizer.relativize_caller(Tescon::Trace::FactoryBot::CallerLocation.format) if classification == :side_effect
+        caller = PathNormalizer.sanitize_caller(Tescon::Trace::FactoryBot::CallerLocation.format) if classification == :side_effect
         links = build_links(attributes)
 
         snapshot = RecordSnapshot.new(
@@ -152,10 +152,10 @@ module Tescon
           "factory" => call.factory_name.to_s,
           "traits" => call.traits.map(&:to_s),
           "overrides" => call.overrides,
-          "caller" => call.caller,
           "records" => call.records.map { |record| record_to_h(record) }
         }
         hash["parent_call_id"] = call.parent_call_id if call.parent_call_id
+        hash["caller"] = call.caller unless call.parent_call_id
         hash["count"] = call.count if call.count
         hash
       end

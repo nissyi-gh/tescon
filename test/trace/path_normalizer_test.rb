@@ -24,4 +24,26 @@ describe Tescon::Trace::PathNormalizer do
       "spec/models/user_spec"
     )
   end
+
+  it "sanitizes gem paths to the factory_bot label" do
+    caller = "/usr/local/bundle/gems/factory_bot-6.5.0/lib/factory_bot.rb:42"
+
+    expect(Tescon::Trace::PathNormalizer.sanitize_caller(caller, root: "/app")).must_equal(
+      "<factory_bot>"
+    )
+  end
+
+  it "keeps project-relative callers when sanitizing" do
+    caller = "/app/spec/models/user_spec.rb:42"
+
+    expect(Tescon::Trace::PathNormalizer.sanitize_caller(caller, root: "/app")).must_equal(
+      "spec/models/user_spec.rb:42"
+    )
+  end
+
+  it "keeps the factory_bot label unchanged" do
+    expect(Tescon::Trace::PathNormalizer.sanitize_caller("<factory_bot>")).must_equal(
+      "<factory_bot>"
+    )
+  end
 end
