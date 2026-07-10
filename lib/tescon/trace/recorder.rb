@@ -86,8 +86,12 @@ module Tescon
         factory_call_stack.pop
       end
 
+      def tracing?
+        !current_example.nil?
+      end
+
       def record_insert(model:, table:, id:, attributes:)
-        raise Error, "no active example" unless current_example
+        return unless tracing?
 
         classification = factory_call_stack.empty? ? :side_effect : :setup
         via = factory_call_stack.size > 1 ? "association" : nil
@@ -115,7 +119,7 @@ module Tescon
       end
 
       def record_update(model:, table:, id:, attributes:)
-        raise Error, "no active example" unless current_example
+        return unless tracing?
 
         caller = PathNormalizer.sanitize_caller(Tescon::Trace::FactoryBot::CallerLocation.format)
         links = build_links(attributes)

@@ -79,6 +79,14 @@ describe "Tescon runtime trace integration" do
     Tescon::Trace::FactoryBot.install!
   end
 
+  it "no-ops updates outside trace scope" do
+    user = User.new(email: "user@example.com").tap(&:save)
+
+    user.update!(nickname: "たろちゃん")
+
+    expect(Tescon::Trace.recorder.examples).must_be_empty
+  end
+
   it "records updates during before(:context) setup as side effects" do
     Tescon::Trace.recorder.begin_context_setup(
       id: "spec/models/user_spec.rb:before_context:4",

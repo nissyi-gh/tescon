@@ -26,6 +26,7 @@ module Tescon
         # inherited_setup = ancestor before_context examples referenced by this it
         #
         # Not recorded: build, build_stubbed, attributes_for
+        # Not recorded: AR insert/update outside RSpec example or before(:context) scope
       HEADER
 
       def self.dump_all(recorder, output_dir: Tescon::Trace.config.output_dir)
