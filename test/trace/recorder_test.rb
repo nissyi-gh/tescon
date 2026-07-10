@@ -169,7 +169,9 @@ describe Tescon::Trace::Recorder do
 
   it "normalizes ActiveRecord overrides into foreign keys" do
     recorder = Tescon::Trace::Recorder.new
-    user = User.new("email" => "alice@example.com").tap(&:save)
+    user = User.new("email" => "alice@example.com", "id" => 1).tap do |record|
+      record.instance_variable_set(:@persisted, true)
+    end
 
     recorder.start_example(
       id: "spec/models/order_spec.rb:10",
@@ -238,5 +240,157 @@ describe Tescon::Trace::Recorder do
         caller: "spec/models/user_spec.rb:1"
       )
     end.must_raise Tescon::Error
+  end
+
+  it "records factory calls during before(:context) setup" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.begin_context_setup(
+      id: "spec/models/user_spec.rb:before_context:4",
+      file: "spec/models/user_spec.rb",
+      line: 4,
+      full_description: "User [before_all setup]"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      caller: "spec/models/user_spec.rb:5"
+    )
+    recorder.record_insert(
+      model: "User",
+      table: "users",
+      id: 1,
+      attributes: { "email" => "user@example.com" }
+    )
+    recorder.exit_factory_call
+    recorder.end_context_setup(context_id: "spec/models/user_spec.rb:before_context:4")
+
+    setup = recorder.examples.first
+    expect(setup.role).must_equal "before_context"
+    expect(setup.description).must_equal "[before_all setup]"
+    expect(setup.factory_calls.length).must_equal 1
+  end
+
+  it "builds inherited_setup from nested before(:context) setups" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.begin_context_setup(
+      id: "spec/models/order_spec.rb:before_context:4",
+      file: "spec/models/order_spec.rb",
+      line: 4,
+      full_description: "Order [before_all setup]"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      caller: "spec/models/order_spec.rb:5"
+    )
+    recorder.exit_factory_call
+
+    recorder.begin_context_setup(
+      id: "spec/models/order_spec.rb:before_context:20",
+      file: "spec/models/order_spec.rb",
+      line: 20,
+      full_description: "Order when paid [before_all setup]"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :order,
+      traits: [:paid],
+      overrides: {},
+      caller: "spec/models/order_spec.rb:21"
+    )
+    recorder.exit_factory_call
+
+    recorder.start_example(
+      id: "spec/models/order_spec.rb:30",
+      file: "spec/models/order_spec.rb",
+      line: 30,
+      description: "returns paid order"
+    )
+    recorder.finish_example
+
+    example = recorder.examples.last
+    expect(example.inherited_setup).must_equal(
+      [
+        { "from" => "spec/models/order_spec.rb:before_context:4" },
+        { "from" => "spec/models/order_spec.rb:before_context:20" }
+      ]
+    )
+  end
+
+  it "records updates as side_effect records" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.start_example(
+      id: "spec/models/user_spec.rb:10",
+      file: "spec/models/user_spec.rb",
+      line: 10,
+      description: "updates nickname"
+    )
+    recorder.record_update(
+      model: "User",
+      table: "users",
+      id: 1,
+      attributes: { "email" => "user@example.com", "nickname" => "たろちゃん" }
+    )
+    recorder.finish_example
+
+    side_effect = recorder.examples.first.side_effect_records.first
+    expect(side_effect.classification).must_equal "side_effect"
+    expect(side_effect.attributes["nickname"]).must_equal "たろちゃん"
+    expect(side_effect.caller).wont_be_nil
+  end
+
+  it "excludes empty before_context examples from dump hashes" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.begin_context_setup(
+      id: "spec/models/user_spec.rb:before_context:4",
+      file: "spec/models/user_spec.rb",
+      line: 4,
+      full_description: "User [before_all setup]"
+    )
+    recorder.end_context_setup(context_id: "spec/models/user_spec.rb:before_context:4")
+
+    recorder.begin_context_setup(
+      id: "spec/models/user_spec.rb:before_context:20",
+      file: "spec/models/user_spec.rb",
+      line: 20,
+      full_description: "User when active [before_all setup]"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      caller: "spec/models/user_spec.rb:21"
+    )
+    recorder.exit_factory_call
+    recorder.end_context_setup(context_id: "spec/models/user_spec.rb:before_context:20")
+
+    recorder.start_example(
+      id: "spec/models/user_spec.rb:30",
+      file: "spec/models/user_spec.rb",
+      line: 30,
+      description: "returns user"
+    )
+    recorder.finish_example
+
+    hashes = recorder.example_hashes_for_dump
+    ids = hashes.map { |hash| hash["id"] }
+
+    expect(ids).wont_include "spec/models/user_spec.rb:before_context:4"
+    expect(ids).must_include "spec/models/user_spec.rb:before_context:20"
+    expect(ids).must_include "spec/models/user_spec.rb:30"
+
+    it_hash = hashes.find { |hash| hash["id"] == "spec/models/user_spec.rb:30" }
+    expect(it_hash["inherited_setup"]).must_equal(
+      [{ "from" => "spec/models/user_spec.rb:before_context:20" }]
+    )
   end
 end

@@ -119,4 +119,63 @@ describe Tescon::Trace::YamlWriter do
   ensure
     FileUtils.rm_rf(output_dir) if output_dir && Dir.exist?(output_dir)
   end
+
+  it "writes inherited_setup and filters empty before_context examples" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.begin_context_setup(
+      id: "spec/models/user_spec.rb:before_context:4",
+      file: "spec/models/user_spec.rb",
+      line: 4,
+      full_description: "User [before_all setup]"
+    )
+    recorder.end_context_setup(context_id: "spec/models/user_spec.rb:before_context:4")
+
+    recorder.begin_context_setup(
+      id: "spec/models/user_spec.rb:before_context:20",
+      file: "spec/models/user_spec.rb",
+      line: 20,
+      full_description: "User when active [before_all setup]"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      caller: "spec/models/user_spec.rb:21"
+    )
+    recorder.record_insert(
+      model: "User",
+      table: "users",
+      id: 1,
+      attributes: { "email" => "user@example.com" }
+    )
+    recorder.exit_factory_call
+    recorder.end_context_setup(context_id: "spec/models/user_spec.rb:before_context:20")
+
+    recorder.start_example(
+      id: "spec/models/user_spec.rb:30",
+      file: "spec/models/user_spec.rb",
+      line: 30,
+      description: "returns user"
+    )
+    recorder.finish_example
+
+    output_dir = File.join(Dir.tmpdir, "tescon-provenance-inherited-#{Process.pid}")
+    paths = Tescon::Trace::YamlWriter.new(output_dir).dump_all(recorder)
+    data = YAML.safe_load(File.read(paths.first))
+
+    expect(data["examples"].length).must_equal 2
+
+    setup = data["examples"].find { |example| example["role"] == "before_context" }
+    expect(setup["description"]).must_equal "[before_all setup]"
+    expect(setup["factory_calls"].length).must_equal 1
+
+    it_example = data["examples"].find { |example| example["id"] == "spec/models/user_spec.rb:30" }
+    expect(it_example["inherited_setup"]).must_equal(
+      [{ "from" => "spec/models/user_spec.rb:before_context:20" }]
+    )
+  ensure
+    FileUtils.rm_rf(output_dir) if output_dir && Dir.exist?(output_dir)
+  end
 end

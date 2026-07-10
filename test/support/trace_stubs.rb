@@ -39,10 +39,20 @@ module ActiveRecord
       self
     end
 
+    def update!(attributes)
+      @attributes.merge!(attributes.transform_keys(&:to_s))
+      _update_record
+      self
+    end
+
     def _create_record(*)
       record_id = self.class.allocate_id
       @attributes["id"] = record_id
       @persisted = true
+      true
+    end
+
+    def _update_record(*)
       true
     end
   end

@@ -65,7 +65,9 @@ describe Tescon::Trace::AttributeNormalizer do
   end
 
   it "collapses ActiveRecord overrides to foreign key ids" do
-    user = User.new("email" => "alice@example.com").tap(&:save)
+    user = User.new("email" => "alice@example.com", "id" => 1).tap do |record|
+      record.instance_variable_set(:@persisted, true)
+    end
 
     normalized = Tescon::Trace::AttributeNormalizer.normalize_overrides(
       "user" => user,

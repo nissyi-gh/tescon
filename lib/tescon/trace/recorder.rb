@@ -8,17 +8,39 @@ module Tescon
   module Trace
     # Collects factory calls and inserted records per RSpec example.
     class Recorder
+      BEFORE_CONTEXT_ROLE = "before_context"
+
       def initialize
         @examples = []
         @current_example = nil
+        @context_stack = []
         @factory_call_stack = []
         @call_counter = 0
       end
 
-      attr_reader :examples
+      attr_reader :examples, :context_stack
+
+      def begin_context_setup(id:, file:, line:, full_description:)
+        finalize_active_context_setup!
+        @call_counter = 0
+        @current_example = ExampleTrace.new(
+          id: id,
+          file: file,
+          line: line,
+          description: "[before_all setup]",
+          full_description: full_description,
+          role: BEFORE_CONTEXT_ROLE
+        )
+      end
+
+      def end_context_setup(context_id:)
+        had_current = before_context?(current_example)
+        finalize_active_context_setup!
+        context_stack.pop if !had_current && context_stack.last&.id == context_id
+      end
 
       def start_example(id:, file:, line:, description:, full_description: nil)
-        finish_example if current_example
+        finalize_active_context_setup!
 
         @call_counter = 0
         @current_example = ExampleTrace.new(
@@ -26,7 +48,8 @@ module Tescon
           file: file,
           line: line,
           description: description,
-          full_description: full_description
+          full_description: full_description,
+          inherited_setup: inherited_setup_refs
         )
       end
 
@@ -91,6 +114,27 @@ module Tescon
         snapshot
       end
 
+      def record_update(model:, table:, id:, attributes:)
+        raise Error, "no active example" unless current_example
+
+        caller = PathNormalizer.sanitize_caller(Tescon::Trace::FactoryBot::CallerLocation.format)
+        links = build_links(attributes)
+
+        snapshot = RecordSnapshot.new(
+          model: model,
+          table: table,
+          id: id,
+          attributes: attributes,
+          classification: "side_effect",
+          caller: caller,
+          via: nil,
+          links: links
+        )
+
+        current_example.side_effect_records << snapshot
+        snapshot
+      end
+
       def examples_by_file
         examples.group_by(&:file)
       end
@@ -105,9 +149,38 @@ module Tescon
         examples.map { |example| example_to_h(example) }
       end
 
+      def example_hashes_for_dump(examples: self.examples)
+        kept = examples.reject { empty_before_context?(_1) }
+        kept_ids = kept.map(&:id).to_set
+        kept.map { |example| example_to_h(example, kept_setup_ids: kept_ids) }
+      end
+
       private
 
       attr_reader :current_example, :factory_call_stack
+
+      def finalize_active_context_setup!
+        return unless before_context?(current_example)
+
+        context_stack << current_example if setup_nonempty?(current_example)
+        finish_example
+      end
+
+      def before_context?(example)
+        example&.role == BEFORE_CONTEXT_ROLE
+      end
+
+      def setup_nonempty?(example)
+        example.factory_calls.any? || example.side_effect_records.any?
+      end
+
+      def empty_before_context?(example)
+        before_context?(example) && !setup_nonempty?(example)
+      end
+
+      def inherited_setup_refs
+        context_stack.map { |setup| { "from" => setup.id } }
+      end
 
       def build_links(attributes)
         known_records = collect_known_records
@@ -132,7 +205,12 @@ module Tescon
         records + current_example.side_effect_records
       end
 
-      def example_to_h(example)
+      def example_to_h(example, kept_setup_ids: nil)
+        inherited = example.inherited_setup
+        if kept_setup_ids
+          inherited = inherited.select { |ref| kept_setup_ids.include?(ref["from"]) }
+        end
+
         hash = {
           "id" => example.id,
           "file" => PathNormalizer.relativize(example.file),
@@ -142,6 +220,8 @@ module Tescon
           "side_effect_records" => example.side_effect_records.map { |record| record_to_h(record) }
         }
         hash["full_description"] = example.full_description if example.full_description
+        hash["role"] = example.role if example.role
+        hash["inherited_setup"] = inherited if inherited.any?
         hash
       end
 
