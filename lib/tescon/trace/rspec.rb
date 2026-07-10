@@ -10,6 +10,21 @@ module Tescon
         return if @installed
 
         ::RSpec.configure do |config|
+          config.before(:context) do
+            metadata = self.class.metadata
+            Tescon::Trace.recorder.begin_context_setup(
+              id: context_setup_id(metadata),
+              file: PathNormalizer.relativize(metadata[:file_path]),
+              line: metadata[:line_number],
+              full_description: "#{metadata[:full_description]} [before_all setup]"
+            )
+          end
+
+          config.after(:context) do
+            metadata = self.class.metadata
+            Tescon::Trace.recorder.end_context_setup(context_id: context_setup_id(metadata))
+          end
+
           config.around(:example) do |example|
             metadata = example.metadata
             Tescon::Trace.recorder.start_example(
@@ -31,6 +46,10 @@ module Tescon
         end
 
         @installed = true
+      end
+
+      def self.context_setup_id(metadata)
+        "#{metadata[:file_path]}:before_context:#{metadata[:line_number]}"
       end
     end
   end

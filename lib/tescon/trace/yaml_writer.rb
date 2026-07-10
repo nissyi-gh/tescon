@@ -18,7 +18,12 @@ module Tescon
         #
         # classification:
         #   setup       = inserted during FactoryBot create/create_list
-        #   side_effect = inserted outside factory calls in the example
+        #   side_effect = inserted or updated outside factory calls in the example
+        #
+        # role:
+        #   before_context = let_it_be / before_all setup phase
+        #
+        # inherited_setup = ancestor before_context examples referenced by this it
         #
         # Not recorded: build, build_stubbed, attributes_for
       HEADER
@@ -44,7 +49,7 @@ module Tescon
 
         data = {
           "meta" => build_meta(source_spec),
-          "examples" => recorder.example_hashes(examples: examples)
+          "examples" => recorder.example_hashes_for_dump(examples: examples)
         }
 
         yaml_body = YAML.dump(data).sub(/\A---\n/, "")

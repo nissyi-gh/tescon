@@ -78,4 +78,24 @@ describe "Tescon runtime trace integration" do
     Tescon::Trace::FactoryBot.install!
     Tescon::Trace::FactoryBot.install!
   end
+
+  it "records updates during before(:context) setup as side effects" do
+    Tescon::Trace.recorder.begin_context_setup(
+      id: "spec/models/user_spec.rb:before_context:4",
+      file: "spec/models/user_spec.rb",
+      line: 4,
+      full_description: "User [before_all setup]"
+    )
+
+    user = FactoryBot.create(:user, email: "user@example.com")
+    user.update!(nickname: "たろちゃん")
+
+    Tescon::Trace.recorder.end_context_setup(context_id: "spec/models/user_spec.rb:before_context:4")
+
+    setup = Tescon::Trace.recorder.examples.first
+    expect(setup.role).must_equal "before_context"
+    expect(setup.factory_calls.length).must_equal 1
+    expect(setup.side_effect_records.length).must_equal 1
+    expect(setup.side_effect_records.first.attributes["nickname"]).must_equal "たろちゃん"
+  end
 end

@@ -16,9 +16,10 @@ module Tescon
       end
     end
 
-    ExampleTrace = Data.define(:id, :file, :line, :description, :full_description, :factory_calls,
-                               :side_effect_records) do
-      def initialize(id:, file:, line:, description:, full_description: nil, factory_calls: [], side_effect_records: [])
+    ExampleTrace = Data.define(:id, :file, :line, :description, :full_description, :role, :inherited_setup,
+                               :factory_calls, :side_effect_records) do
+      def initialize(id:, file:, line:, description:, full_description: nil, role: nil, inherited_setup: [],
+                     factory_calls: [], side_effect_records: [])
         super
       end
     end
