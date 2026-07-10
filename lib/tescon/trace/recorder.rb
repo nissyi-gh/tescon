@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "provenance"
+require_relative "attribute_normalizer"
 
 module Tescon
   module Trace
@@ -110,7 +111,10 @@ module Tescon
           "model" => record.model,
           "table" => record.table,
           "id" => record.id,
-          "attributes" => record.attributes,
+          "attributes" => AttributeNormalizer.normalize(
+            record.attributes,
+            full: Tescon::Trace.config.full_attributes?
+          ),
           "classification" => record.classification
         }
       end

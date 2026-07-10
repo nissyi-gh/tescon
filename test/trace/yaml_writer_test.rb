@@ -25,7 +25,12 @@ describe Tescon::Trace::YamlWriter do
       model: "Order",
       table: "orders",
       id: 1,
-      attributes: { "status" => "paid" }
+      attributes: {
+        "id" => 1,
+        "status" => "paid",
+        "created_at" => Time.utc(2026, 7, 10, 16, 11, 8),
+        "updated_at" => Time.utc(2026, 7, 10, 16, 11, 8)
+      }
     )
     recorder.exit_factory_call
     recorder.finish_example
@@ -37,7 +42,9 @@ describe Tescon::Trace::YamlWriter do
     expect(data["examples"].length).must_equal 1
     expect(data["examples"].first["factory_calls"].first["factory"]).must_equal "order"
     expect(data["examples"].first["factory_calls"].first["traits"]).must_equal ["paid"]
-    expect(data["examples"].first["factory_calls"].first["records"].first["classification"]).must_equal "setup"
+    record = data["examples"].first["factory_calls"].first["records"].first
+    expect(record["classification"]).must_equal "setup"
+    expect(record["attributes"]).must_equal("status" => "paid")
   ensure
     File.delete(path) if path && File.exist?(path)
   end

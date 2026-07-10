@@ -90,6 +90,12 @@ RSpec suite 終了時に `tmp/tescon/provenance.yml` へ書き出します。出
 TESCON_TRACE_PATH=tmp/tescon/provenance.yml bundle exec rspec
 ```
 
+デフォルトでは `attributes` から `id` / `created_at` / `updated_at` を除外します。タイムスタンプは ISO 8601 文字列に正規化されます。フルダンプが必要な場合:
+
+```bash
+TESCON_TRACE_FULL_ATTRIBUTES=1 bundle exec rspec
+```
+
 **分類ルール（MVP）**
 
 - FactoryBot 呼び出し中に insert されたレコード → `setup`
