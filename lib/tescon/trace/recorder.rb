@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "securerandom"
+
 require_relative "provenance"
 require_relative "attribute_normalizer"
 require_relative "path_normalizer"
@@ -63,6 +65,7 @@ module Tescon
       end
 
       def enter_factory_call(caller:, strategy:, factory_name:, traits: [], overrides: {}, count: nil) # rubocop:disable Metrics/ParameterLists
+        ensure_active_example_for_factory!
         raise Error, "no active example" unless current_example
 
         @call_counter += 1
@@ -184,6 +187,24 @@ module Tescon
 
       def inherited_setup_refs
         context_stack.map { |setup| { "from" => setup.id } }
+      end
+
+      def ensure_active_example_for_factory!
+        return if current_example
+        return unless before_all_scope?
+
+        begin_context_setup(
+          id: "auto:before_all:#{SecureRandom.hex(4)}",
+          file: "<before_all>",
+          line: 0,
+          full_description: "[auto before_all setup]"
+        )
+      end
+
+      def before_all_scope?
+        return false unless defined?(::RSpec) && ::RSpec.respond_to?(:current_scope)
+
+        %i[before_all before_context_hook].include?(::RSpec.current_scope)
       end
 
       def build_links(attributes)
