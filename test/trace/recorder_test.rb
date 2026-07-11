@@ -242,6 +242,90 @@ describe Tescon::Trace::Recorder do
     end.must_raise Tescon::Error
   end
 
+  it "auto-starts before_all setup when enter_factory_call runs in before_all scope" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.begin_context_setup(
+      id: "spec/models/order_spec.rb:before_context:4",
+      file: "spec/models/order_spec.rb",
+      line: 4,
+      full_description: "Order [before_all setup]"
+    )
+    recorder.enter_factory_call(
+      strategy: :create,
+      factory_name: :user,
+      traits: [],
+      overrides: {},
+      caller: "spec/models/order_spec.rb:5"
+    )
+    recorder.exit_factory_call
+    recorder.start_example(
+      id: "spec/models/order_spec.rb:30",
+      file: "spec/models/order_spec.rb",
+      line: 30,
+      description: "returns order"
+    )
+    recorder.finish_example
+
+    rspec_stub = Module.new do
+      def self.current_scope
+        :before_all
+      end
+    end
+    original_rspec = (::RSpec if defined?(::RSpec))
+    Object.const_set(:RSpec, rspec_stub)
+    begin
+      recorder.enter_factory_call(
+        strategy: :create,
+        factory_name: :order,
+        traits: [],
+        overrides: {},
+        caller: "spec/models/order_spec.rb:21"
+      )
+      recorder.exit_factory_call
+      recorder.end_context_setup(context_id: "unused")
+    ensure
+      if original_rspec
+        Object.const_set(:RSpec, original_rspec)
+      elsif Object.const_defined?(:RSpec)
+        Object.send(:remove_const, :RSpec)
+      end
+    end
+
+    auto_setup = recorder.examples.last
+    expect(auto_setup.role).must_equal "before_context"
+    expect(auto_setup.id).must_match(/\Aauto:before_all:[0-9a-f]{8}\z/)
+    expect(auto_setup.file).must_equal "<before_all>"
+    expect(auto_setup.factory_calls.length).must_equal 1
+    expect(auto_setup.factory_calls.first.factory_name).must_equal :order
+  end
+
+  it "raises enter_factory_call outside example even when parent setup was finalized" do
+    recorder = Tescon::Trace::Recorder.new
+
+    recorder.begin_context_setup(
+      id: "spec/models/order_spec.rb:before_context:4",
+      file: "spec/models/order_spec.rb",
+      line: 4,
+      full_description: "Order [before_all setup]"
+    )
+    recorder.start_example(
+      id: "spec/models/order_spec.rb:30",
+      file: "spec/models/order_spec.rb",
+      line: 30,
+      description: "returns order"
+    )
+    recorder.finish_example
+
+    expect do
+      recorder.enter_factory_call(
+        strategy: :create,
+        factory_name: :order,
+        caller: "spec/models/order_spec.rb:21"
+      )
+    end.must_raise Tescon::Error
+  end
+
   it "no-ops record_insert when no active example" do
     recorder = Tescon::Trace::Recorder.new
 

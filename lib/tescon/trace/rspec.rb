@@ -10,7 +10,7 @@ module Tescon
         return if @installed
 
         ::RSpec.configure do |config|
-          config.before(:context) do
+          config.prepend_before(:context) do
             metadata = self.class.metadata
             Tescon::Trace.recorder.begin_context_setup(
               id: Tescon::Trace::RSpec.context_setup_id(metadata),
